@@ -1,18 +1,60 @@
-import React from 'react';
+import { User } from '@/utils/checkLogin';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
 type Props = {};
 
 function LoginForm({}: Props) {
+  const session = useSession();
+  const router = useRouter();
+  console.log(session);
+
+  const [errorLogin, setErrorLogin] = useState<string>('');
+  const [formInput, setFormInput] = useState<User>({
+    username: '',
+    password: '',
+  });
+
+  const changeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFormInput({ ...formInput, [event.target.name]: event.target.value });
+  };
+
+  const submitHandler = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (formInput.username.trim() && formInput.password.trim()) {
+      const res = await signIn('credentials', {
+        username: formInput.username,
+        password: formInput.password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setErrorLogin(res.error);
+        return;
+      }
+
+      if (res?.ok) {
+        setFormInput({ password: '', username: '' });
+        router.push('/');
+      }
+    }
+  };
+
   return (
-    <div className=' p-5'>
+    <form onSubmit={submitHandler} className=' p-5'>
+      {errorLogin && (
+        <span className='text-red-400 text-sm mb-3 block'>{errorLogin}</span>
+      )}
       <div className='relative z-0 w-full mb-6 group'>
         <input
+          value={formInput.username}
+          onChange={changeHandler}
           type='text'
           name='username'
           id='username'
           className='block py-2.5 px-0 w-72 text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white focus:outline-none focus:ring-0 focus:border-blue-600 peer'
           placeholder=' '
-          required
         />
         <label
           htmlFor='username'
@@ -23,12 +65,13 @@ function LoginForm({}: Props) {
       </div>
       <div className='relative z-0 w-full mb-6 group'>
         <input
+          value={formInput.password}
+          onChange={changeHandler}
           type='password'
           name='password'
           id='password'
           className='block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white focus:outline-none focus:ring-0 focus:border-blue-600 peer'
           placeholder=' '
-          required
         />
         <label
           htmlFor='password'
@@ -40,7 +83,7 @@ function LoginForm({}: Props) {
       <button className='bg-blue-400 w-full py-2 rounded-md text-white'>
         Login
       </button>
-    </div>
+    </form>
   );
 }
 

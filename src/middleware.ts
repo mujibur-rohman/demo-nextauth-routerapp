@@ -9,7 +9,15 @@ export default withAuth(
     // Credential protect
     if (
       req.nextUrl.pathname.startsWith('/credential') &&
-      req.nextauth.token?.provider !== 'credential'
+      req.nextauth.token?.provider !== 'credentials'
+    ) {
+      return NextResponse.redirect(new URL('/forbidden', req.url));
+    }
+
+    // Keycloak protect
+    if (
+      req.nextUrl.pathname.startsWith('/keycloak') &&
+      req.nextauth.token?.provider !== 'keycloak'
     ) {
       return NextResponse.redirect(new URL('/forbidden', req.url));
     }
