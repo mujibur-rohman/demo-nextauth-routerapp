@@ -1,35 +1,40 @@
+import { getToken } from 'next-auth/jwt';
 import { withAuth, NextRequestWithAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
-export default withAuth(
-  function middleware(req: NextRequestWithAuth) {
-    // console.log('middle', req.nextUrl.pathname);
-    // console.log('token', req.nextauth.token?.provider);
+export default async function middleware(req: NextRequestWithAuth) {
+  const auth = await getToken({ req });
+  const authenticated = !!auth;
 
-    // Credential protect
-    if (
-      req.nextUrl.pathname.startsWith('/credential') &&
-      req.nextauth.token?.provider !== 'credentials'
-    ) {
-      return NextResponse.redirect(new URL('/forbidden', req.url));
-    }
+  console.log(auth?.provider);
 
-    // Keycloak protect
-    if (
-      req.nextUrl.pathname.startsWith('/keycloak') &&
-      req.nextauth.token?.provider !== 'keycloak'
-    ) {
-      return NextResponse.redirect(new URL('/forbidden', req.url));
+  if (req.nextUrl.pathname === '/login') {
+    if (authenticated) {
+      return NextResponse.redirect(new URL('/', req.url));
     }
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        // console.log('callback', token);
-        return Boolean(token);
-      },
-    },
+  } else {
+    if (!authenticated) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
   }
-);
 
-export const config = { matcher: ['/keycloak', '/credential', '/'] };
+  // Credential protect
+  if (
+    req.nextUrl.pathname.startsWith('/credential') &&
+    auth?.provider !== 'credentials'
+  ) {
+    return NextResponse.redirect(new URL('/forbidden', req.url));
+  }
+
+  // Keycloak protect
+  if (
+    req.nextUrl.pathname.startsWith('/keycloak') &&
+    auth?.provider !== 'keycloak'
+  ) {
+    return NextResponse.redirect(new URL('/forbidden', req.url));
+  }
+}
+
+export const config = {
+  matcher: ['/', '/credential', '/login', '/keycloak'],
+};

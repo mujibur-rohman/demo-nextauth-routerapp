@@ -48,7 +48,6 @@ export const authOptions: AuthOptions = {
       }
     },
     async jwt({ token, account, user }) {
-      //   console.log('jwtCALLBACK', account);
       if (account) {
         token.accessToken = account.access_token;
         token.provider = account.provider;
